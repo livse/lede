@@ -120,12 +120,13 @@ describe_domain() {
 	if [ "$__value" == "" ]; then
 		write_log 7 "Parsing record:[${__HOST}.${__DOMAIN}] does not exist"
 		ret=1
-	else
+	#加入了@解析的分支判断
+	else if [ "$__HOST" != "@" ]; then
 		__value=`jsonfilter -i $DATFILE -e "@.records[@.name='$__HOST'].type"`
 		if [ "$__value" != "$__TYPE" ]; then
 			write_log 7 "Current parsing [type:$__TYPE], get mismatched [type:$__value]"
 			ret=2
-		else
+		else 
 			__RECID=`jsonfilter -i $DATFILE -e "@.records[@.name='$__HOST'].id"`
 			write_log 7 "Get parsing recordID:[$__RECID]"
 			__RECIP=`jsonfilter -i $DATFILE -e "@.records[@.name='$__HOST'].value"`
@@ -135,6 +136,21 @@ describe_domain() {
 			fi
 		fi
 		__TTL=`jsonfilter -i $DATFILE -e "@.records[@.name='$__HOST'].ttl"`
+	else 
+		__value=`jsonfilter -i $DATFILE -e "@.records[@.name='$__HOST'][@.type='$__TYPE'].type"`
+		if [ "$__value" != "$__TYPE" ]; then
+			write_log 7 "Current parsing [type:$__TYPE], get mismatched [type:$__value]"
+			ret=2
+		else 
+			__RECID=`jsonfilter -i $DATFILE -e "@.records[@.name='$__HOST'][@.type='$__TYPE'].id"`
+			write_log 7 "Get parsing recordID:[$__RECID]"
+			__RECIP=`jsonfilter -i $DATFILE -e "@.records[@.name='$__HOST'][@.type='$__TYPE'].value"`
+			if [ "$__RECIP" != "$__IP" ]; then
+				write_log 7 "Address needs to be modified, local address:[$__IP]"
+				ret=2
+			fi
+		fi
+		__TTL=`jsonfilter -i $DATFILE -e "@.records[@.name='$__HOST'][@.type='$__TYPE'].ttl"`
 	fi
 }
 
